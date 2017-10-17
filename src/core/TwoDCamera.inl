@@ -25,6 +25,6 @@ void TwoDCamera<T, P>::Update(double dt, InputHandler &ih)
 		if ((ih.GetKeycodeState(GLFW_KEY_D) & PRESSED)) strafe += movement;
 	}
 
-	mWorld.Translate(mWorld.GetRight() * strafe);
-	mWorld.Translate(mWorld.GetUp() * levitate);
+	//mWorld.Translate(mWorld.GetRight() * strafe);
+	//mWorld.Translate(mWorld.GetUp() * levitate);
 }

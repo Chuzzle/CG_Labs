@@ -172,6 +172,7 @@ edaf80::Assignment5::run()
 		auto unit_sphere = parametric_shapes::createSphere(50, 50, 1.0);
 
 		auto world = Node();
+		world.set_translation(camera_position);
 
 		//Generate skybox
 		auto skybox_sphere = parametric_shapes::createSphere(50, 50, 500.0f);
@@ -207,7 +208,7 @@ edaf80::Assignment5::run()
 
 		//
 		// Todo: Generate an array of random asteriods
-		//
+		//A
 
 		float const mean_radius = 1.0f, std_dev_radius = 0.5f, MIN_Z = -5.0f, MAX_Z = -500.0f, MIN_X = -100.0f, MAX_X = 100.0f, MIN_Y = -100.0f, MAX_Y = 100.0f;
 
@@ -240,6 +241,9 @@ edaf80::Assignment5::run()
 
 		//glfwSetInputMode(window->GetGLFW_Window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
+		//Setup speed control for the spaceship
+		float hor_speed = 0.0f, vert_speed = 0.0, MAX_SPEED = 10.0f, ds = 0.0001f;
+
 		f64 ddeltatime;
 		size_t fpsSamples = 0;
 		double nowTime, lastTime = GetTimeMilliseconds();
@@ -261,17 +265,36 @@ edaf80::Assignment5::run()
 
 			glfwPollEvents();
 			inputHandler->Advance();
-			mCamera.Update(ddeltatime, *inputHandler);
+			//mCamera.Update(ddeltatime, *inputHandler);
 
 			ImGui_ImplGlfwGL3_NewFrame();
 
 			//
 			// Todo: If you need to handle inputs, you can do it here
 			//
+			if (inputHandler->GetKeycodeState(GLFW_KEY_W) & PRESSED) {
+				if (vert_speed <= MAX_SPEED)
+					vert_speed += ds;
+			}
+
+			if (inputHandler->GetKeycodeState(GLFW_KEY_S) & PRESSED) {
+				if (-vert_speed <= MAX_SPEED)
+					vert_speed -= ds;
+			}
+
+			if (inputHandler->GetKeycodeState(GLFW_KEY_D) & PRESSED) {
+				if (hor_speed <= MAX_SPEED)
+					hor_speed += ds;
+			}
+
+			if (inputHandler->GetKeycodeState(GLFW_KEY_A) & PRESSED) {
+				if (-hor_speed <= MAX_SPEED)
+					hor_speed -= ds;
+			}
+
 			if (inputHandler->GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
 				reload_shaders();
 			}
-
 
 			auto const window_size = window->GetDimensions();
 			glViewport(0, 0, window_size.x, window_size.y);
@@ -279,11 +302,31 @@ edaf80::Assignment5::run()
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-			camera_position = mCamera.mWorld.GetTranslation();
+			//camera_position = mCamera.mWorld.GetTranslation();
 
-			world.set_translation(camera_position);
+			//world.set_translation(camera_position);
 			// Add a check here to ensure that the camera never goes out of bounds
+			float height = mCamera.GetFov();
+			float width = height * mCamera.GetAspect();
 
+			if (spaceship.get_translation().y < height/2 && spaceship.get_translation().y > -height/2) {
+				spaceship.translate(glm::vec3(0, vert_speed * ddeltatime, 0));
+			} else if (spaceship.get_translation().y >= height/2 && vert_speed < 0) {
+				spaceship.translate(glm::vec3(0, vert_speed * ddeltatime, 0));
+			} else if (spaceship.get_translation().y <= -height/2 && vert_speed > 0) {
+				spaceship.translate(glm::vec3(0, vert_speed * ddeltatime, 0));
+			} else {
+				vert_speed = 0;
+			}
+			if (spaceship.get_translation().x < width/2 && spaceship.get_translation().x > - width/2) {
+				spaceship.translate(glm::vec3(hor_speed * ddeltatime, 0, 0));
+			} else if(spaceship.get_translation().x >= width/2 && hor_speed < 0) {
+				spaceship.translate(glm::vec3(hor_speed * ddeltatime, 0, 0));
+			} else if(spaceship.get_translation().x <= -width/2 && hor_speed > 0) {
+				spaceship.translate(glm::vec3(hor_speed * ddeltatime, 0, 0));
+			} else {
+				hor_speed = 0;
+			}
 			//
 			// Todo: Render all your geometry here.
 			//
@@ -293,7 +336,7 @@ edaf80::Assignment5::run()
 
 			glm::vec3 spaceship_location(spaceship_transform * glm::vec4(0, 0, 0, 1));
 			glm::vec3 asteroid_spawn_location(asteroid_spawn_transform * glm::vec4(0, 0, 0, 1));
-			glm::vec3 camera_location(world_matrix * glm::vec4(0, 0, 0, 1));
+			//glm::vec3 camera_location(world_matrix * glm::vec4(0, 0, 0, 1));
 
 			for (int n = 0; n < numAsteroids; ++n) {
 
@@ -303,7 +346,7 @@ edaf80::Assignment5::run()
 				// Check visibility and collision
 				glm::vec3 asteroid_location = glm::vec3((asteroids[n].get_transform() * glm::vec4(0, 0, 0, 1.0f)));
 
-				if (asteroid_location.z < camera_location.z) {
+				if (asteroid_location.z < (world_matrix * glm::vec4(0.0, 0.0, 0.0, 1.0)).z) {
 					asteroids[n].render(mCamera.GetWorldToClipMatrix(), asteroids[n].get_transform());
 					if (edaf80::Assignment5::testSphereSphere(asteroid_location, asteroid_radius[n], spaceship_location, spaceship_radius)) {
 						std::cout << ++num_collisions << std::endl;
