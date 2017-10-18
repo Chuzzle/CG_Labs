@@ -242,10 +242,11 @@ edaf80::Assignment5::run()
 
 		f64 ddeltatime;
 		size_t fpsSamples = 0;
-		double nowTime, lastTime = GetTimeMilliseconds();
+		double endTime, nowTime, beginTime = GetTimeMilliseconds(), lastTime = GetTimeMilliseconds();
 		double fpsNextTick = lastTime + 1000.0;
 
 		int num_collisions = 0;
+		bool game_over = false;
 
 		while (!glfwWindowShouldClose(window->GetGLFW_Window())) {
 			nowTime = GetTimeMilliseconds();
@@ -261,7 +262,9 @@ edaf80::Assignment5::run()
 
 			glfwPollEvents();
 			inputHandler->Advance();
-			mCamera.Update(ddeltatime, *inputHandler);
+			if(!game_over) {
+				mCamera.Update(ddeltatime, *inputHandler);
+			}
 
 			ImGui_ImplGlfwGL3_NewFrame();
 
@@ -295,45 +298,69 @@ edaf80::Assignment5::run()
 			glm::vec3 asteroid_spawn_location(asteroid_spawn_transform * glm::vec4(0, 0, 0, 1));
 			glm::vec3 camera_location(world_matrix * glm::vec4(0, 0, 0, 1));
 
-			for (int n = 0; n < numAsteroids; ++n) {
+			if (!game_over){
+				for (int n = 0; n < numAsteroids; ++n) {
 
-				// Translate according to velocity
-				asteroids[n].translate(glm::vec3(ddeltatime)*asteroid_velocity);
+					// Translate according to velocity
+					asteroids[n].translate(glm::vec3(ddeltatime)*asteroid_velocity);
 
-				// Check visibility and collision
-				glm::vec3 asteroid_location = glm::vec3((asteroids[n].get_transform() * glm::vec4(0, 0, 0, 1.0f)));
+					// Check visibility and collision
+					glm::vec3 asteroid_location = glm::vec3((asteroids[n].get_transform() * glm::vec4(0, 0, 0, 1.0f)));
+					if (asteroid_location.z < camera_location.z) {
+						asteroids[n].render(mCamera.GetWorldToClipMatrix(), asteroids[n].get_transform());
 
-				if (asteroid_location.z < camera_location.z) {
-					asteroids[n].render(mCamera.GetWorldToClipMatrix(), asteroids[n].get_transform());
-					if (edaf80::Assignment5::testSphereSphere(asteroid_location, asteroid_radius[n], spaceship_location, spaceship_radius)) {
-						std::cout << ++num_collisions << std::endl;
+						if (edaf80::Assignment5::testSphereSphere(asteroid_location, asteroid_radius[n], spaceship_location, spaceship_radius)) {
+							if (++num_collisions >= 3) {
+								game_over = true;
+								endTime = nowTime;
+								asteroid_velocity = glm::vec3(0,0,0);
+							}
+							asteroid_radius[n] = asteroid_radii(generator);
+							asteroids[n].set_scaling(glm::vec3(asteroid_radius[n]));
+							glm::vec3 new_loc = asteroid_spawn_location + glm::vec3(asteroid_spawn_x(generator), asteroid_spawn_y(generator), 0);
+							asteroids[n].set_translation(new_loc);
+						}
+					}
+					else {
 						asteroid_radius[n] = asteroid_radii(generator);
 						asteroids[n].set_scaling(glm::vec3(asteroid_radius[n]));
-						glm::vec3 new_loc = asteroid_spawn_location + glm::vec3(asteroid_spawn_x(generator), asteroid_spawn_y(generator), 0);
-						asteroids[n].set_translation(new_loc);
+						asteroids[n].set_translation(glm::vec3(asteroid_spawn_x(generator), asteroid_spawn_y(generator), 0) + asteroid_spawn_location);
 					}
+
 				}
-				else {
-					asteroid_radius[n] = asteroid_radii(generator);
-					asteroids[n].set_scaling(glm::vec3(asteroid_radius[n]));
-					asteroids[n].set_translation(glm::vec3(asteroid_spawn_x(generator), asteroid_spawn_y(generator), 0) + asteroid_spawn_location);
-				}
+				spaceship.render(mCamera.GetWorldToClipMatrix(), spaceship_transform);
 
 			}
-
 			skybox.render(mCamera.GetWorldToClipMatrix(), world_matrix*skybox.get_transform());
-			spaceship.render(mCamera.GetWorldToClipMatrix(), spaceship_transform);
 
 			asteroid_spawn.render(mCamera.GetWorldToClipMatrix(), world_matrix * asteroid_spawn.get_transform());
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-			Log::View::Render();
+			//Log::View::Render();
 
 			//
 			// Todo: If you want a custom ImGUI window, you can set it up
 			//       here
 			//
+			if (!game_over) {
+				ImGui_ImplGlfwGL3_NewFrame();
+				//const char* window_title = "You have collided with " + static_cast<char>(num_collisions) + " asteroids";
+				bool opened = ImGui::Begin("DON'T CRASH", &opened);
+				if (opened) {
+					ImGui::Text("YOU HAVE BEEN PLAYING FOR %.2f SECONDS AND HAVE CRASHED INTO %d ASTEROIDS", (nowTime - beginTime)/1000, num_collisions);
+				}
+				ImGui::End();
+			}
+
+			if (game_over) {
+				ImGui_ImplGlfwGL3_NewFrame();
+				bool opened = ImGui::Begin("YOU CRASHED INTO TOO MANY ASTEROIDS!", &opened);
+				if (opened) {
+					ImGui::Text(" GAME OVER , YOU LASTED %.2f SECONDS!", (endTime - beginTime)/1000);
+				}
+				ImGui::End();
+			}
 
 			ImGui::Render();
 
@@ -341,6 +368,10 @@ edaf80::Assignment5::run()
 			lastTime = nowTime;
 		}
 
+		glDeleteProgram(default_shader);
+		glDeleteProgram(asteroid_shader);
+		glDeleteProgram(fallback_shader);
+		glDeleteProgram(skybox_shader);
 		//
 		// Todo: Do not forget to delete your shader programs, by calling
 		//       `glDeleteProgram($your_shader_program)` for each of them.
