@@ -271,10 +271,14 @@ edaf80::Assignment5::run()
 			//
 			// Todo: If you need to handle inputs, you can do it here
 			//
-			if (inputHandler->GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
-				reload_shaders();
+			if (game_over) {
+				if (inputHandler->GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
+					beginTime = GetTimeMilliseconds();
+					game_over = false;
+					num_collisions = 0;
+					asteroid_velocity = glm::vec3(0.0f, 0.0f, 0.05f);
+				}
 			}
-
 
 			auto const window_size = window->GetDimensions();
 			glViewport(0, 0, window_size.x, window_size.y);
@@ -358,6 +362,7 @@ edaf80::Assignment5::run()
 				bool opened = ImGui::Begin("YOU CRASHED INTO TOO MANY ASTEROIDS!", &opened);
 				if (opened) {
 					ImGui::Text(" GAME OVER , YOU LASTED %.2f SECONDS!", (endTime - beginTime)/1000);
+					ImGui::Text("TO PLAY AGAIN PRESS R");
 				}
 				ImGui::End();
 			}
