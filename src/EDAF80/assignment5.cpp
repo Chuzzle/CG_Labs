@@ -347,7 +347,7 @@ edaf80::Assignment5::run()
 
 					// Check visibility and collision
 					glm::vec3 asteroid_location = glm::vec3((asteroids[n].get_transform() * glm::vec4(0, 0, 0, 1.0f)));
-					if (asteroid_location.z < camera_location.z) {
+					if (asteroid_location.z < (world_matrix*glm::vec4(0,0,0,1)).z) {
 						asteroids[n].render(mCamera.GetWorldToClipMatrix(), asteroids[n].get_transform());
 
 						if (edaf80::Assignment5::testSphereSphere(asteroid_location, asteroid_radius[n], spaceship_location, spaceship_radius)) {
