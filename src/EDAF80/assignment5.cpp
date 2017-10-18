@@ -201,7 +201,7 @@ edaf80::Assignment5::run()
 		world.add_child(&asteroid_spawn);
 
 		//Setup the data structure for the asteroids
-		int const numAsteroids = 1000;
+		int const numAsteroids = 100;
 
 		std::array<Node, numAsteroids> asteroids;
 		std::array<float, numAsteroids> asteroid_radius;
@@ -210,7 +210,7 @@ edaf80::Assignment5::run()
 		// Todo: Generate an array of random asteriods
 		//A
 
-		float const mean_radius = 1.0f, std_dev_radius = 0.5f, MIN_Z = -5.0f, MAX_Z = -500.0f, MIN_X = -100.0f, MAX_X = 100.0f, MIN_Y = -100.0f, MAX_Y = 100.0f;
+		float const mean_radius = 3.0f, std_dev_radius = 0.5f, MIN_Z = -15.0f, MAX_Z = -500.0f, MIN_X = -50.0f, MAX_X = 50.0f, MIN_Y = -50.0f, MAX_Y = 50.0f;
 
 		std::random_device seeder;
 		std::default_random_engine generator(seeder());
@@ -242,7 +242,8 @@ edaf80::Assignment5::run()
 		//glfwSetInputMode(window->GetGLFW_Window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 		//Setup speed control for the spaceship
-		float hor_speed = 0.0f, vert_speed = 0.0, MAX_SPEED = 10.0f, ds = 0.0001f;
+		float hor_speed = 0.0f, vert_speed = 0.0, MAX_SPEED = 10.0f, ds = 0.00005f;
+		int speed_increase = 1;
 
 		f64 ddeltatime;
 		size_t fpsSamples = 0;
@@ -299,6 +300,8 @@ edaf80::Assignment5::run()
 					game_over = false;
 					num_collisions = 0;
 					asteroid_velocity = glm::vec3(0.0f, 0.0f, 0.05f);
+					ds = 0.00005f;
+					speed_increase = 1;
 				}
 			}
 
@@ -386,6 +389,11 @@ edaf80::Assignment5::run()
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 			//Log::View::Render();
+			if ((nowTime - beginTime) > speed_increase*10000) {
+				//std::cout << "hey" << std::endl;
+				asteroid_velocity = asteroid_velocity + glm::vec3(0.0, 0.0, 0.05);
+				++speed_increase;
+			}
 
 			//
 			// Todo: If you want a custom ImGUI window, you can set it up
