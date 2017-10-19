@@ -201,7 +201,7 @@ edaf80::Assignment5::run()
 		world.add_child(&asteroid_spawn);
 
 		//Setup the data structure for the asteroids
-		int const numAsteroids = 100;
+		int const numAsteroids = 200;
 
 		std::array<Node, numAsteroids> asteroids;
 		std::array<float, numAsteroids> asteroid_radius;
@@ -302,6 +302,7 @@ edaf80::Assignment5::run()
 					asteroid_velocity = glm::vec3(0.0f, 0.0f, 0.05f);
 					ds = 0.00005f;
 					speed_increase = 1;
+					spaceship.set_translation(glm::vec3(0.0f, -0.2f, -1.0f));
 				}
 			}
 
